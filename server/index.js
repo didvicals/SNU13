@@ -14,6 +14,7 @@ import {
     getPublicState,
     nextOne,
     adminAwardPoint,
+    isTeamAdmin,
     adminName
 } from './gameState.js';
 
