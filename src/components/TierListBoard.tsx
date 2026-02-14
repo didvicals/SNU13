@@ -21,11 +21,12 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../context/GameContext'
+    ;
 import { TIERS } from '../types/game';
 import type { Tier, Item, Ranking } from '../types/game';
 
-// SortableItem - only the individual items are sortable
+// NEW: SortableItem with dedicated drag handle
 const SortableItem = ({ item }: { item: Item }) => {
     const {
         attributes,
@@ -34,6 +35,7 @@ const SortableItem = ({ item }: { item: Item }) => {
         transform,
         transition,
         isDragging,
+        setActivatorNodeRef,
     } = useSortable({ id: item.id });
 
     const style = {
@@ -47,9 +49,17 @@ const SortableItem = ({ item }: { item: Item }) => {
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
+            className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
         >
+            {/* DRAG HANDLE - Full clickable area with touch-action: none */}
+            <div
+                ref={setActivatorNodeRef}
+                {...listeners}
+                style={{ touchAction: 'none' }}
+                className="absolute inset-0 cursor-grab active:cursor-grabbing z-10"
+            />
+
+            {/* Content */}
             {item.image && (
                 <img
                     src={item.image}
@@ -57,12 +67,12 @@ const SortableItem = ({ item }: { item: Item }) => {
                     className="w-full h-14 md:h-16 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
                 />
             )}
-            <span className="px-1 truncate w-full">{item.name}</span>
+            <span className="px-1 truncate w-full relative z-20 pointer-events-none">{item.name}</span>
         </div>
     );
 };
 
-// Plain Item for DragOverlay (not sortable, just visual)
+// Plain Item for DragOverlay
 const Item = ({ item }: { item: Item }) => {
     return (
         <div className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 shadow-lg">
@@ -120,7 +130,7 @@ const ItemPool = ({ items }: { items: Item[] }) => {
                     }`}
             >
                 <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-                    {items.length === 0 && <div className="w-full h-full flex items-center justify-center text-paper-400 text-sm italic">All items ranked!</div>}
+                    {items.length === 0 && <span className="text-paper-400 text-sm w-full text-center italic py-8">All items ranked!</span>}
                     {items.map(item => (
                         <SortableItem key={item.id} item={item} />
                     ))}
@@ -130,46 +140,47 @@ const ItemPool = ({ items }: { items: Item[] }) => {
     );
 };
 
-export const TierListBoard: React.FC = () => {
+export const TierListBoard = () => {
     const { gameState, submitRanking, myTeamName } = useGame();
+
     const [itemsMap, setItemsMap] = useState<Record<string, Item[]>>({
         pool: [],
-        Goat: [], S: [], A: [], B: [], C: [],
+        Goat: [],
+        S: [],
+        A: [],
+        B: [],
+        C: [],
     });
-    const itemsMapRef = React.useRef(itemsMap);
 
-    // Keep ref in sync ensuring it's available for event handlers immediately
+    const itemsMapRef = React.useRef(itemsMap);
     useEffect(() => {
         itemsMapRef.current = itemsMap;
     }, [itemsMap]);
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    const mouseSensorOptions = useMemo(() => ({
+    // Mobile-optimized sensor configuration
+    const mouseSensor = useSensor(MouseSensor, {
         activationConstraint: {
             distance: 5,
         },
-    }), []);
+    });
 
-    const touchSensorOptions = useMemo(() => ({
+    const touchSensor = useSensor(TouchSensor, {
         activationConstraint: {
             delay: 250,
             tolerance: 5,
         },
-    }), []);
+    });
 
-    const mouseSensor = useSensor(MouseSensor, mouseSensorOptions);
-    const touchSensor = useSensor(TouchSensor, touchSensorOptions);
     const keyboardSensor = useSensor(KeyboardSensor, {
         coordinateGetter: sortableKeyboardCoordinates,
     });
+
     const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
-        // Use ref to avoid dependency on itemsMap state
         const currentItemsMap = itemsMapRef.current;
-
-        // First, look for a container intersection (pointer within)
         const pointerIntersections = pointerWithin(args);
         const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
         const overId = getFirstCollision(intersections, 'id');
@@ -179,20 +190,17 @@ export const TierListBoard: React.FC = () => {
                 return [{ id: overId }];
             }
 
-            // If over an item, find its container
             const container = Object.keys(currentItemsMap).find(key =>
                 currentItemsMap[key].find(item => item.id === overId)
             );
 
-            // If we found a container and it matches a tier/pool
             if (container && container !== overId) {
-                // If we are over an item, closestCenter allows us to find the insert position
                 return closestCenter(args);
             }
         }
 
         return closestCenter(args);
-    }, []); // Stable callback
+    }, []);
 
     useEffect(() => {
         if (gameState.round) {
@@ -220,10 +228,8 @@ export const TierListBoard: React.FC = () => {
 
         if (activeId === overId) return;
 
-        // Use ref for stable access
         const currentItemsMap = itemsMapRef.current;
 
-        // Find containers
         let activeContainer: string | null = null;
         let overContainer: string | null = null;
 
@@ -236,7 +242,6 @@ export const TierListBoard: React.FC = () => {
             }
         }
 
-        // If over a container itself (empty container case)
         if (!overContainer) {
             if (['pool', ...TIERS].includes(overId as string)) {
                 overContainer = overId;
@@ -248,8 +253,6 @@ export const TierListBoard: React.FC = () => {
         }
 
         if (activeContainer !== overContainer) {
-            // THROTTLE: Prevent flickering loops
-            // Only allow cross-container moves every 50ms
             const now = Date.now();
             if (now - lastAppendedRef.current < 50) {
                 return;
@@ -288,7 +291,7 @@ export const TierListBoard: React.FC = () => {
                 };
             });
         }
-    }, []); // Stable callback
+    }, []);
 
     const handleDragEnd = useCallback((event: any) => {
         const { active, over } = event;
@@ -369,7 +372,7 @@ export const TierListBoard: React.FC = () => {
         }
 
         setActiveId(null);
-    }, []); // Stable callback
+    }, []);
 
     const handleSubmit = () => {
         const ranking: Ranking = {};
