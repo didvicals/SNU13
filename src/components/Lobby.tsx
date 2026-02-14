@@ -15,10 +15,16 @@ export const Lobby: React.FC = () => {
     const isJoined = !!myTeamName;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 font-sans">
-            <img src="/assets/items/서울대학교.png" alt="Seoul National University Logo" className="w-24 h-24 mb-4 object-contain" />
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2 text-paper-900 tracking-tight text-center">미리배움터 레크리에이션</h1>
-            <p className="text-paper-500 mb-8 text-lg font-medium">서울대학교 미리배움터 13조</p>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 font-sans bg-gradient-to-br from-blue-50 via-white to-purple-50">
+            <div className="animate-bounce mb-2">
+                <img src="/assets/items/서울대학교.png" alt="Seoul National University Logo" className="w-28 h-28 object-contain drop-shadow-lg" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 tracking-tight text-center animate-pulse">
+                🎮 미리배움터 레크리에이션 ✨
+            </h1>
+            <p className="text-paper-600 mb-8 text-lg font-semibold bg-yellow-100 px-4 py-2 rounded-full shadow-sm">
+                🏆 서울대학교 미리배움터 13조 🏆
+            </p>
 
             {/* Game Overview Timeline */}
             <div className="w-full max-w-2xl bg-white p-6 rounded-xl shadow-sm border border-paper-200 mb-8 animate-fade-in">
