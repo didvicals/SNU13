@@ -39,83 +39,108 @@ const getIsAdmin = (socket) => {
     return isTeamAdmin(socket.id);
 };
 
+// Global error handler wrapper
+const handleSocketEvent = async (socket, handler) => {
+    try {
+        await handler();
+    } catch (err) {
+        console.error(`Error in socket event for ${socket.id}:`, err);
+        socket.emit('error', { message: 'Server error occurred' });
+    }
+};
+
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('join_game', (name) => {
-        const result = joinTeam(socket.id, name);
-        socket.emit('join_success', result);
-        io.emit('state_update', getPublicState());
+    // Initial state push
+    socket.emit('gameStateUpdate', getPublicState());
+
+    socket.on('joinTeam', ({ name }) => {
+        handleSocketEvent(socket, () => {
+            console.log(`Join request from ${socket.id}: ${name}`);
+            const result = joinTeam(socket.id, name);
+            if (result.success) {
+                socket.emit('joined', result);
+                io.emit('gameStateUpdate', getPublicState());
+            } else {
+                socket.emit('joined', result);
+            }
+        });
     });
 
-    socket.on('admin_start_game', () => {
-        if (getIsAdmin(socket)) {
-            const state = startGame();
-            io.emit('state_update', state);
-        }
+    socket.on('adminAction', ({ action, payload }) => {
+        handleSocketEvent(socket, () => {
+            if (!getIsAdmin(socket)) {
+                console.warn(`Unauthorized admin action ${action} from ${socket.id}`);
+                return;
+            }
+
+            console.log(`Admin action: ${action}`, payload);
+            let state = null;
+
+            switch (action) {
+                case 'startGame':
+                    state = startGame();
+                    break;
+                case 'nextRound':
+                    state = nextRound();
+                    break;
+                case 'nextOne':
+                    state = nextOne();
+                    break;
+                case 'awardPoint':
+                    state = adminAwardPoint(payload.teamName, payload.points);
+                    break;
+                case 'removeTeam':
+                    state = removeTeam(payload.teamName);
+                    break;
+                case 'resetGame':
+                    state = resetGame();
+                    break;
+                case 'calculateRound': // explicit calc
+                    state = calculateRoundResults();
+                    break;
+                default:
+                    console.warn('Unknown admin action:', action);
+            }
+
+            if (state) {
+                io.emit('gameStateUpdate', state);
+            }
+        });
     });
 
-    socket.on('submit_ranking', (ranking) => {
-        const state = submitRanking(socket.id, ranking);
-        io.emit('state_update', state);
+    socket.on('submitRanking', (ranking) => {
+        handleSocketEvent(socket, () => {
+            console.log(`Submission from ${socket.id}`);
+            const state = submitRanking(socket.id, ranking);
+            io.emit('gameStateUpdate', state);
 
-        const allSubmitted = Object.keys(state.submissions[state.round?.id] || {}).length >=
-            state.teams.filter(t => t.name !== adminName && t.connected).length;
+            // Auto-calculate if all teams submitted
+            const allSubmitted = Object.keys(state.submissions[state.round?.id] || {}).length >=
+                state.teams.filter(t => t.name !== adminName && t.connected).length;
 
-        if (allSubmitted) {
-            setTimeout(() => {
-                const newState = calculateRoundResults();
-                io.emit('state_update', newState);
-            }, 500);
-        }
-    });
-
-    socket.on('admin_calculate_round', () => {
-        if (getIsAdmin(socket)) {
-            const state = calculateRoundResults();
-            io.emit('state_update', state);
-        }
-    });
-
-    socket.on('admin_next_round', () => {
-        if (getIsAdmin(socket)) {
-            const state = nextRound();
-            io.emit('state_update', state);
-        }
-    });
-
-    socket.on('admin_next_one', () => {
-        if (getIsAdmin(socket)) {
-            const state = nextOne();
-            io.emit('state_update', state);
-        }
-    });
-
-    socket.on('admin_award_point', ({ teamName, points }) => {
-        if (getIsAdmin(socket)) {
-            const state = adminAwardPoint(teamName, points);
-            io.emit('state_update', state);
-        }
-    });
-
-    socket.on('admin_remove_team', (teamName) => {
-        if (getIsAdmin(socket)) {
-            const state = removeTeam(teamName);
-            io.emit('state_update', state);
-        }
-    });
-
-    socket.on('admin_reset_game', () => {
-        if (getIsAdmin(socket)) {
-            const state = resetGame();
-            io.emit('state_update', state);
-        }
+            if (allSubmitted && state.phase === 'playing') {
+                setTimeout(() => {
+                    try {
+                        const newState = calculateRoundResults();
+                        io.emit('gameStateUpdate', newState);
+                    } catch (e) {
+                        console.error("Auto calculation error:", e);
+                    }
+                }, 500);
+            }
+        });
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-        const state = disconnectTeam(socket.id);
-        io.emit('state_update', state);
+        try {
+            console.log('User disconnected:', socket.id);
+            const state = disconnectTeam(socket.id);
+            io.emit('gameStateUpdate', state);
+        } catch (e) {
+            console.error("Disconnect error:", e);
+        }
     });
 });
 
@@ -124,5 +149,3 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
-
-export default server;

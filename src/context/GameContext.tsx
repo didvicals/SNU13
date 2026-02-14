@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { GameState, ServerResponse, Ranking } from '../types/game';
+import type { GameState, Ranking } from '../types/game';
 
 interface GameContextType {
     socket: Socket | null;
@@ -54,25 +54,50 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
         const newSocket = io(SOCKET_URL, {
             transports: ['websocket', 'polling'],
-            reconnectionAttempts: 5,
+            reconnectionAttempts: Infinity, // Keep trying to reconnect
+            reconnectionDelay: 1000,
+            timeout: 20000 // Increase timeout for mobile stability
         });
 
         newSocket.on('connect', () => {
             console.log('Connected to server');
             setIsConnected(true);
+
+            // Auto-rejoin if we have a saved name in session storage
+            const savedName = sessionStorage.getItem('goatGameTeamName');
+            if (savedName) {
+                console.log('Found saved session, attempting auto-rejoin for:', savedName);
+                newSocket.emit('joinTeam', { name: savedName });
+                setMyTeamName(savedName);
+            }
         });
 
-        newSocket.on('disconnect', () => {
-            console.log('Disconnected from server');
+        newSocket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
             setIsConnected(false);
         });
 
-        newSocket.on('join_success', (data: ServerResponse) => {
-            setServerIsAdmin(data.isAdmin);
-            setGameState(data.state);
+        newSocket.on('disconnect', (reason) => {
+            console.warn('Socket disconnected:', reason);
+            setIsConnected(false);
         });
 
-        newSocket.on('state_update', (state: GameState) => {
+        newSocket.on('joined', (data: any) => {
+            if (data.success) {
+                setServerIsAdmin(data.isAdmin);
+                setGameState(data.state);
+                if (myTeamName) {
+                    sessionStorage.setItem('goatGameTeamName', myTeamName);
+                }
+            } else {
+                alert(data.message || 'Join failed');
+                setMyTeamName(null);
+                sessionStorage.removeItem('goatGameTeamName');
+            }
+        });
+
+        newSocket.on('gameStateUpdate', (state: GameState) => {
+            console.log('Received Game State Update:', state);
             setGameState(state);
         });
 
@@ -86,56 +111,56 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const joinGame = (name: string) => {
         if (socket) {
             setMyTeamName(name);
-            socket.emit('join_game', name);
+            // Save immediately to session storage to handle quick refreshes
+            sessionStorage.setItem('goatGameTeamName', name);
+            socket.emit('joinTeam', { name });
         }
     };
 
     const startGame = () => {
         if (socket && isAdmin) {
-            socket.emit('admin_start_game');
+            socket.emit('adminAction', { action: 'startGame' });
         }
     };
 
     const submitRanking = (ranking: Ranking) => {
         if (socket) {
-            socket.emit('submit_ranking', ranking);
+            socket.emit('submitRanking', ranking);
         }
     };
 
     const calculateRound = () => {
-        if (socket && isAdmin) {
-            socket.emit('admin_calculate_round');
-        }
+        // Legacy/Unused
     }
 
     const nextRound = () => {
         if (socket && isAdmin) {
-            socket.emit('admin_next_round');
+            socket.emit('adminAction', { action: 'nextRound' });
         }
     };
 
     const nextOne = () => {
         if (socket && isAdmin) {
-            socket.emit('admin_next_one');
+            socket.emit('adminAction', { action: 'nextOne' });
         }
     };
 
     const awardPoint = (teamName: string, points: number) => {
         if (socket && isAdmin) {
-            socket.emit('admin_award_point', { teamName, points });
+            socket.emit('adminAction', { action: 'awardPoint', payload: { teamName, points } });
         }
     };
 
     const removeTeam = (teamName: string) => {
         if (socket && isAdmin) {
-            socket.emit('admin_remove_team', teamName);
+            socket.emit('adminAction', { action: 'removeTeam', payload: { teamName } });
         }
     }
 
     const resetGame = () => {
         if (socket && isAdmin) {
             if (confirm('정말로 게임을 리셋하시겠습니까? 모든 진행 상황이 초기화됩니다.')) {
-                socket.emit('admin_reset_game');
+                socket.emit('adminAction', { action: 'resetGame' });
             }
         }
     }

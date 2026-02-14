@@ -5,6 +5,7 @@ import {
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     useDroppable,
@@ -150,11 +151,19 @@ export const TierListBoard: React.FC = () => {
         },
     }), []);
 
+    const touchSensorOptions = useMemo(() => ({
+        activationConstraint: {
+            delay: 250,
+            tolerance: 5,
+        },
+    }), []);
+
     const activeIdSensor = useSensor(PointerSensor, pointerSensorOptions);
+    const touchSensor = useSensor(TouchSensor, touchSensorOptions);
     const keyboardSensor = useSensor(KeyboardSensor, {
         coordinateGetter: sortableKeyboardCoordinates,
     });
-    const sensors = useSensors(activeIdSensor, keyboardSensor);
+    const sensors = useSensors(activeIdSensor, touchSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         // Use ref to avoid dependency on itemsMap state
