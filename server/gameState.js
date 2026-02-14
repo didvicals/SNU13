@@ -405,8 +405,9 @@ function resetGame() {
     gameState.roundResultsCalculated = false;
     gameState.quizHistory = [];
 
-    // Reset team scores but keep connections
-    Object.values(teams).forEach(t => t.score = 0);
+    // COMPLETE RESET: Clear all teams and admin
+    teams = {};
+    adminSocketId = null;
 
     return getPublicState();
 }

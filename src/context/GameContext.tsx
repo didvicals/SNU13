@@ -51,7 +51,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         // Use environment variable for production, localhost for development
-        const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+        const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+
+        if (!SOCKET_URL) {
+            console.error('VITE_SOCKET_URL is not set! Please configure your environment variables.');
+            return;
+        }
+
         const newSocket = io(SOCKET_URL, {
             transports: ['websocket', 'polling'],
             reconnectionAttempts: Infinity, // Keep trying to reconnect
