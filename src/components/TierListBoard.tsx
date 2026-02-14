@@ -4,7 +4,7 @@ import {
     DragOverlay,
     closestCenter,
     KeyboardSensor,
-    PointerSensor,
+    MouseSensor,
     TouchSensor,
     useSensor,
     useSensors,
@@ -45,10 +45,7 @@ const SortableItem = ({ item }: { item: Item }) => {
     return (
         <div
             ref={setNodeRef}
-            style={{
-                ...style,
-                touchAction: 'none', // CRITICAL for mobile touch drag
-            }}
+            style={style}
             {...attributes}
             {...listeners}
             className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
@@ -148,7 +145,7 @@ export const TierListBoard: React.FC = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    const pointerSensorOptions = useMemo(() => ({
+    const mouseSensorOptions = useMemo(() => ({
         activationConstraint: {
             distance: 5,
         },
@@ -156,17 +153,17 @@ export const TierListBoard: React.FC = () => {
 
     const touchSensorOptions = useMemo(() => ({
         activationConstraint: {
-            distance: 8, // Use distance instead of delay+tolerance for better UX
+            delay: 250,
+            tolerance: 5,
         },
     }), []);
 
-
-    const activeIdSensor = useSensor(PointerSensor, pointerSensorOptions);
+    const mouseSensor = useSensor(MouseSensor, mouseSensorOptions);
     const touchSensor = useSensor(TouchSensor, touchSensorOptions);
     const keyboardSensor = useSensor(KeyboardSensor, {
         coordinateGetter: sortableKeyboardCoordinates,
     });
-    const sensors = useSensors(activeIdSensor, touchSensor, keyboardSensor);
+    const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         // Use ref to avoid dependency on itemsMap state
