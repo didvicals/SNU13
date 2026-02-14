@@ -48,13 +48,13 @@ const SortableItem = ({ item }: { item: Item }) => {
             style={style}
             {...attributes}
             {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-xs font-semibold flex flex-col items-center justify-center text-center h-24 w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
+            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md touch-manipulation"
         >
             {item.image && (
                 <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-16 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
+                    className="w-full h-14 md:h-16 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
                 />
             )}
             <span className="px-1 truncate w-full">{item.name}</span>
@@ -65,12 +65,12 @@ const SortableItem = ({ item }: { item: Item }) => {
 // Plain Item for DragOverlay (not sortable, just visual)
 const Item = ({ item }: { item: Item }) => {
     return (
-        <div className="relative group rounded-md text-xs font-semibold flex flex-col items-center justify-center text-center h-24 w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 shadow-lg">
+        <div className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 shadow-lg">
             {item.image && (
                 <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-16 object-cover pointer-events-none mb-1"
+                    className="w-full h-14 md:h-16 object-cover pointer-events-none mb-1"
                 />
             )}
             <span className="px-1 truncate w-full">{item.name}</span>
@@ -85,17 +85,17 @@ const TierRow = ({ tier, items, colorClass }: { tier: Tier; items: Item[]; color
     });
 
     return (
-        <div className="flex mb-3 shadow-sm rounded-lg overflow-hidden border border-paper-200">
-            <div className={`w-24 flex-shrink-0 flex items-center justify-center font-bold text-xl text-paper-900 ${colorClass} bg-opacity-20 border-r border-paper-200/50`}>
+        <div className="flex mb-2 md:mb-3 shadow-sm rounded-lg overflow-hidden border border-paper-200">
+            <div className={`w-16 md:w-24 flex-shrink-0 flex items-center justify-center font-bold text-lg md:text-xl text-paper-900 ${colorClass} bg-opacity-20 border-r border-paper-200/50`}>
                 {tier}
             </div>
             <div
                 ref={setNodeRef}
-                className={`flex-grow bg-paper-50 min-h-[8rem] p-2 flex flex-wrap items-center content-center transition-colors ${isOver ? 'bg-paper-200' : 'hover:bg-paper-100/50'
+                className={`flex-grow bg-paper-50 min-h-[6rem] md:min-h-[8rem] p-1 md:p-2 flex flex-wrap items-center content-center transition-colors ${isOver ? 'bg-paper-200' : 'hover:bg-paper-100/50'
                     }`}
             >
                 <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-                    {items.length === 0 && <span className="text-paper-300 text-xs w-full text-center select-none italic">Drop items here</span>}
+                    {items.length === 0 && <span className="text-paper-300 text-xs w-full text-center select-none italic">Empty</span>}
                     {items.map((item) => (
                         <SortableItem key={item.id} item={item} />
                     ))}
@@ -154,7 +154,7 @@ export const TierListBoard: React.FC = () => {
     const touchSensorOptions = useMemo(() => ({
         activationConstraint: {
             delay: 250,
-            tolerance: 5,
+            tolerance: 15, // Increased tolerance to be more forgiving
         },
     }), []);
 
@@ -400,17 +400,19 @@ export const TierListBoard: React.FC = () => {
     const activeItem = activeId ? allItems.find(item => item.id === activeId) : null;
 
     return (
-        <div className="max-w-3xl mx-auto">
-            <header className="mb-8 text-center pt-8">
+        <div className="max-w-3xl mx-auto pb-24">
+            <header className="mb-4 text-center pt-4">
                 {myTeamName && (
-                    <div className="mb-3">
-                        <span className="inline-block px-4 py-1 bg-accent-secondary text-white rounded-full text-sm font-bold shadow-sm">
+                    <div className="mb-2">
+                        <span className="inline-block px-3 py-1 bg-accent-secondary text-white rounded-full text-xs font-bold shadow-sm">
                             팀: {myTeamName}
                         </span>
                     </div>
                 )}
-                <h1 className="text-2xl font-serif font-bold text-paper-900">{gameState.round.title}</h1>
-                <p className="text-paper-500 text-sm mt-1">아이템을 드래그하여 티어를 정하고, 같은 티어 내에서도 순서를 조정하세요!</p>
+                <h1 className="text-xl font-serif font-bold text-paper-900">{gameState.round.title}</h1>
+                <p className="text-paper-500 text-xs mt-1">
+                    모바일: 아이템을 <span className="font-bold text-accent-primary">꾹 눌러서</span> 드래그하세요!
+                </p>
             </header>
 
             <DndContext
@@ -420,25 +422,35 @@ export const TierListBoard: React.FC = () => {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="space-y-3">
-                    {TIERS.map(tier => (
-                        <TierRow
-                            key={tier}
-                            tier={tier}
-                            items={itemsMap[tier]}
-                            colorClass={tierColors[tier]}
-                        />
-                    ))}
-                </div>
+                <div className="flex flex-col">
+                    {/* Item Pool - Order First on Mobile */}
+                    <div className="order-1 md:order-2 mb-6 sticky top-0 z-40 bg-paper-50/95 backdrop-blur-sm p-2 rounded-xl shadow-sm border border-paper-200">
+                        <div className="flex justify-between items-center mb-2 px-1">
+                            <h3 className="text-xs font-bold text-paper-400 uppercase tracking-wider">대기 중인 아이템</h3>
+                            <span className="text-[10px] text-paper-400">남은 아이템: {itemsMap.pool.length}개</span>
+                        </div>
+                        <ItemPool items={itemsMap.pool} />
+                    </div>
 
-                <ItemPool items={itemsMap.pool} />
+                    {/* Tiers - Order Second on Mobile */}
+                    <div className="order-2 md:order-1 space-y-2">
+                        {TIERS.map(tier => (
+                            <TierRow
+                                key={tier}
+                                tier={tier}
+                                items={itemsMap[tier]}
+                                colorClass={tierColors[tier]}
+                            />
+                        ))}
+                    </div>
+                </div>
 
                 <DragOverlay>
                     {activeItem ? <Item item={activeItem} /> : null}
                 </DragOverlay>
             </DndContext>
 
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-paper-200 p-4 shadow-lg flex justify-center z-10">
+            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-paper-200 p-4 shadow-lg flex justify-center z-50 safe-area-bottom">
                 <button
                     onClick={handleSubmit}
                     className="max-w-md w-full bg-paper-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg shadow-sm transition-transform active:scale-[0.98]"
