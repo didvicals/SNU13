@@ -45,10 +45,13 @@ const SortableItem = ({ item }: { item: Item }) => {
     return (
         <div
             ref={setNodeRef}
-            style={style}
+            style={{
+                ...style,
+                touchAction: 'none', // CRITICAL for mobile touch drag
+            }}
             {...attributes}
             {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md touch-manipulation"
+            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
         >
             {item.image && (
                 <img
@@ -153,10 +156,10 @@ export const TierListBoard: React.FC = () => {
 
     const touchSensorOptions = useMemo(() => ({
         activationConstraint: {
-            delay: 250,
-            tolerance: 15, // Increased tolerance to be more forgiving
+            distance: 8, // Use distance instead of delay+tolerance for better UX
         },
     }), []);
+
 
     const activeIdSensor = useSensor(PointerSensor, pointerSensorOptions);
     const touchSensor = useSensor(TouchSensor, touchSensorOptions);
