@@ -21,12 +21,11 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useGame } from '../context/GameContext'
-    ;
+import { useGame } from '../context/GameContext';
 import { TIERS } from '../types/game';
 import type { Tier, Item, Ranking } from '../types/game';
 
-// NEW: SortableItem with dedicated drag handle
+// Simple SortableItem - no handle, just direct drag
 const SortableItem = ({ item }: { item: Item }) => {
     const {
         attributes,
@@ -35,7 +34,6 @@ const SortableItem = ({ item }: { item: Item }) => {
         transform,
         transition,
         isDragging,
-        setActivatorNodeRef,
     } = useSortable({ id: item.id });
 
     const style = {
@@ -49,17 +47,9 @@ const SortableItem = ({ item }: { item: Item }) => {
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
+            {...listeners}
+            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md touch-none"
         >
-            {/* DRAG HANDLE - Full clickable area with touch-action: none */}
-            <div
-                ref={setActivatorNodeRef}
-                {...listeners}
-                style={{ touchAction: 'none' }}
-                className="absolute inset-0 cursor-grab active:cursor-grabbing z-10"
-            />
-
-            {/* Content */}
             {item.image && (
                 <img
                     src={item.image}
@@ -67,7 +57,7 @@ const SortableItem = ({ item }: { item: Item }) => {
                     className="w-full h-14 md:h-16 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
                 />
             )}
-            <span className="px-1 truncate w-full relative z-20 pointer-events-none">{item.name}</span>
+            <span className="px-1 truncate w-full">{item.name}</span>
         </div>
     );
 };
@@ -159,17 +149,17 @@ export const TierListBoard = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // Mobile-optimized sensor configuration
+    // CRITICAL: Proper mobile sensor configuration
     const mouseSensor = useSensor(MouseSensor, {
         activationConstraint: {
-            distance: 5,
+            distance: 10,
         },
     });
 
     const touchSensor = useSensor(TouchSensor, {
         activationConstraint: {
-            delay: 250,
-            tolerance: 5,
+            delay: 200,
+            tolerance: 8,
         },
     });
 
@@ -414,7 +404,7 @@ export const TierListBoard = () => {
                 )}
                 <h1 className="text-xl font-serif font-bold text-paper-900">{gameState.round.title}</h1>
                 <p className="text-paper-500 text-xs mt-1">
-                    모바일: 아이템을 <span className="font-bold text-accent-primary">꾹 눌러서</span> 드래그하세요!
+                    모바일: 아이템을 <span className="font-bold text-accent-primary">꾹 눌러서 (0.2초)</span> 드래그하세요!
                 </p>
             </header>
 
