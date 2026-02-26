@@ -15,7 +15,7 @@ dist-ssr
 # Environment files
 .env
 .env.local
-.env.production
+# .env.production is intentionally committed so Vercel can use VITE_SOCKET_URL during build
 
 # Vercel
 .vercel
