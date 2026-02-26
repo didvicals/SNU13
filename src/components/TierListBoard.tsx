@@ -4,8 +4,7 @@ import {
     DragOverlay,
     closestCenter,
     KeyboardSensor,
-    MouseSensor,
-    TouchSensor,
+    PointerSensor,
     useSensor,
     useSensors,
     useDroppable,
@@ -24,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useGame } from '../context/GameContext';
 import { TIERS } from '../types/game';
 import type { Tier, Item, Ranking } from '../types/game';
+import { GripVertical } from 'lucide-react';
 
 // Simple SortableItem - no handle, just direct drag
 const SortableItem = ({ item }: { item: Item }) => {
@@ -41,19 +41,24 @@ const SortableItem = ({ item }: { item: Item }) => {
         transition,
         opacity: isDragging ? 0.5 : 1,
         zIndex: isDragging ? 50 : undefined,
-        // Using touch-action: none here is okay because the TouchSensor delay
-        // allows the browser to initiate a scroll before the sensor activates.
-        touchAction: 'none',
     };
 
     return (
         <div
             ref={setNodeRef}
             style={style}
-            {...attributes}
-            {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md transition-shadow"
+            className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md transition-shadow"
         >
+            {/* Drag Handle - ONLY this area initiates drag */}
+            <div
+                {...attributes}
+                {...listeners}
+                className="absolute top-1 right-1 p-1 cursor-grab active:cursor-grabbing text-paper-300 hover:text-accent-primary z-10"
+                style={{ touchAction: 'none' }}
+            >
+                <GripVertical size={14} />
+            </div>
+
             {item.image && (
                 <img
                     src={item.image}
@@ -152,19 +157,11 @@ export const TierListBoard = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // Use Mouse and Touch sensors.
-    // Full-item drag is restored.
-    // TouchSensor with delay allows distinguishing scroll vs drag.
-    const mouseSensor = useSensor(MouseSensor, {
+    // Use PointerSensor with drag handles.
+    // Since only the handle is touch-action: none, the rest of the item allows scrolling.
+    const pointerSensor = useSensor(PointerSensor, {
         activationConstraint: {
-            distance: 10,
-        },
-    });
-
-    const touchSensor = useSensor(TouchSensor, {
-        activationConstraint: {
-            delay: 250,
-            tolerance: 5,
+            distance: 5, // Immediate feedback on handle touch
         },
     });
 
@@ -172,7 +169,7 @@ export const TierListBoard = () => {
         coordinateGetter: sortableKeyboardCoordinates,
     });
 
-    const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
+    const sensors = useSensors(pointerSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         const currentItemsMap = itemsMapRef.current;
