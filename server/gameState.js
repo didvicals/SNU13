@@ -125,6 +125,7 @@ function disconnectTeam(socketId) {
     if (teams[socketId]) {
         teams[socketId].connected = false;
     }
+    return getPublicState();
 }
 
 function removeTeam(teamName) {
@@ -246,7 +247,7 @@ function adminAwardPoint(teamName, points) {
 
 function submitRanking(socketId, ranking) {
     const team = teams[socketId];
-    if (!team) return false;
+    if (!team) return getPublicState();
 
     const currentRound = GAME_ROUNDS[gameState.currentRoundIndex];
     if (!gameState.submissions[currentRound.id]) {
@@ -267,7 +268,7 @@ function submitRanking(socketId, ranking) {
         calculateRoundResults();
     }
 
-    return true;
+    return getPublicState();
 }
 
 function calculateRoundResults() {

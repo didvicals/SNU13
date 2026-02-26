@@ -92,9 +92,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data.success) {
                 setServerIsAdmin(data.isAdmin);
                 setGameState(data.state);
-                if (myTeamName) {
-                    sessionStorage.setItem('goatGameTeamName', myTeamName);
-                }
+                // Note: sessionStorage is already saved in joinGame() and auto-rejoin path.
+                // Do NOT reference myTeamName here — it's stale (null) due to closure capture.
             } else {
                 alert(data.message || 'Join failed');
                 setMyTeamName(null);

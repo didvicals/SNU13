@@ -114,23 +114,9 @@ io.on('connection', (socket) => {
     socket.on('submitRanking', (ranking) => {
         handleSocketEvent(socket, () => {
             console.log(`Submission from ${socket.id}`);
+            // submitRanking() handles auto-calculate internally when all teams submit
             const state = submitRanking(socket.id, ranking);
             io.emit('gameStateUpdate', state);
-
-            // Auto-calculate if all teams submitted
-            const allSubmitted = Object.keys(state.submissions[state.round?.id] || {}).length >=
-                state.teams.filter(t => t.name !== adminName && t.connected).length;
-
-            if (allSubmitted && state.phase === 'playing') {
-                setTimeout(() => {
-                    try {
-                        const newState = calculateRoundResults();
-                        io.emit('gameStateUpdate', newState);
-                    } catch (e) {
-                        console.error("Auto calculation error:", e);
-                    }
-                }, 500);
-            }
         });
     });
 

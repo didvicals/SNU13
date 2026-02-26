@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* dnd-kit: Required for mobile drag-and-drop to work correctly.
+   Prevents browser scroll from intercepting touch events during drag. */
+html {
+  touch-action: none;
+}
+
 @layer utilities {
   .safe-area-bottom {
     padding-bottom: constant(safe-area-inset-bottom);
