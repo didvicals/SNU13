@@ -20,13 +20,17 @@
 
   html,
   body {
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+    /* Prevents pull-to-refresh but keeps scroll */
   }
 
   body {
-    @apply bg-paper-100 text-paper-900 font-sans antialiased overflow-x-hidden;
+    @apply bg-paper-100 text-paper-900 font-sans antialiased;
   }
 }
 
