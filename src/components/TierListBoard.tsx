@@ -40,9 +40,8 @@ const SortableItem = ({ item }: { item: Item }) => {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        // Required by dnd-kit docs: touch-action must be set in style (not just CSS class)
-        // for PointerEvents on iOS Safari to prevent page scroll during drag
-        touchAction: 'none',
+        // TouchSensor with delay:250ms distinguishes scroll vs drag.
+        // Do NOT set touchAction:'none' here — that would block page scroll on mobile.
     };
 
     return (
