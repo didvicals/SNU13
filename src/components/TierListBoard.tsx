@@ -4,7 +4,7 @@ import {
     DragOverlay,
     closestCenter,
     KeyboardSensor,
-    PointerSensor,
+    MouseSensor,
     TouchSensor,
     useSensor,
     useSensors,
@@ -36,10 +36,13 @@ const SortableItem = ({ item }: { item: Item }) => {
         isDragging,
     } = useSortable({ id: item.id });
 
-    const style = {
+    const style: React.CSSProperties = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
+        // Required by dnd-kit docs: touch-action must be set in style (not just CSS class)
+        // for PointerEvents on iOS Safari to prevent page scroll during drag
+        touchAction: 'none',
     };
 
     return (
@@ -48,7 +51,7 @@ const SortableItem = ({ item }: { item: Item }) => {
             style={style}
             {...attributes}
             {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md touch-none"
+            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
         >
             {item.image && (
                 <img
@@ -149,19 +152,20 @@ export const TierListBoard = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // PointerSensor handles both mouse and stylus; TouchSensor handles touch screens
-    const pointerSensor = useSensor(PointerSensor, {
+    // Per dnd-kit official docs: use MouseSensor + TouchSensor separately.
+    // PointerSensor + TouchSensor together causes conflicts on mobile.
+    const mouseSensor = useSensor(MouseSensor, {
+        // Require the mouse to move by 10 pixels before activating (official docs value)
         activationConstraint: {
-            // Require a 8px move before drag starts — prevents accidental drag on click
-            distance: 8,
+            distance: 10,
         },
     });
 
     const touchSensor = useSensor(TouchSensor, {
+        // Press delay of 250ms, with tolerance of 5px of movement (official docs value)
         activationConstraint: {
-            // 200ms press + allow 10px movement so a quick scroll tap doesn't become a drag
-            delay: 200,
-            tolerance: 10,
+            delay: 250,
+            tolerance: 5,
         },
     });
 
@@ -169,7 +173,7 @@ export const TierListBoard = () => {
         coordinateGetter: sortableKeyboardCoordinates,
     });
 
-    const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
+    const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         const currentItemsMap = itemsMapRef.current;
