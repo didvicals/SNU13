@@ -4,7 +4,7 @@ import {
     DragOverlay,
     closestCenter,
     KeyboardSensor,
-    MouseSensor,
+    PointerSensor,
     TouchSensor,
     useSensor,
     useSensors,
@@ -149,17 +149,19 @@ export const TierListBoard = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // CRITICAL: Proper mobile sensor configuration
-    const mouseSensor = useSensor(MouseSensor, {
+    // PointerSensor handles both mouse and stylus; TouchSensor handles touch screens
+    const pointerSensor = useSensor(PointerSensor, {
         activationConstraint: {
-            distance: 10,
+            // Require a 8px move before drag starts — prevents accidental drag on click
+            distance: 8,
         },
     });
 
     const touchSensor = useSensor(TouchSensor, {
         activationConstraint: {
-            delay: 150,
-            tolerance: 5,
+            // 200ms press + allow 10px movement so a quick scroll tap doesn't become a drag
+            delay: 200,
+            tolerance: 10,
         },
     });
 
@@ -167,7 +169,7 @@ export const TierListBoard = () => {
         coordinateGetter: sortableKeyboardCoordinates,
     });
 
-    const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
+    const sensors = useSensors(pointerSensor, touchSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         const currentItemsMap = itemsMapRef.current;
@@ -417,7 +419,7 @@ export const TierListBoard = () => {
             >
                 <div className="flex flex-col">
                     {/* Item Pool - Order First on Mobile */}
-                    <div className="order-1 md:order-2 mb-6 sticky top-0 z-40 bg-paper-50/95 backdrop-blur-sm p-2 rounded-xl shadow-sm border border-paper-200 touch-none">
+                    <div className="order-1 md:order-2 mb-6 sticky top-0 z-40 bg-paper-50/95 backdrop-blur-sm p-2 rounded-xl shadow-sm border border-paper-200">
 
                         <div className="flex justify-between items-center mb-2 px-1">
                             <h3 className="text-xs font-bold text-paper-400 uppercase tracking-wider">대기 중인 아이템</h3>
