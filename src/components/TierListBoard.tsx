@@ -122,7 +122,6 @@ const ItemPool = ({ items }: { items: Item[] }) => {
 
     return (
         <div className="mt-8">
-            <h3 className="text-xs font-bold text-paper-400 uppercase tracking-wider mb-3 ml-1">Unranked Items</h3>
             <div
                 ref={setNodeRef}
                 className={`bg-paper-100 p-4 rounded-xl border-2 border-dashed border-paper-300 min-h-[140px] flex flex-wrap gap-2 transition-colors ${isOver ? 'bg-paper-200' : 'hover:bg-paper-50'
@@ -406,9 +405,6 @@ export const TierListBoard = () => {
                     </div>
                 )}
                 <h1 className="text-xl font-serif font-bold text-paper-900">{gameState.round.title}</h1>
-                <p className="text-paper-500 text-xs mt-1">
-                    모바일: 아이템을 <span className="font-bold text-accent-primary">꾹 눌러서 (0.2초)</span> 드래그하세요!
-                </p>
             </header>
 
             <DndContext
