@@ -4,11 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* dnd-kit: Required for mobile drag-and-drop to work correctly.
-   Prevents browser scroll from intercepting touch events during drag. */
-html {
-  touch-action: none;
-}
+/* dnd-kit: touch-action:none is applied per-draggable-item in TierListBoard,
+   NOT globally here, so that normal page scroll still works on mobile. */
 
 @layer utilities {
   .safe-area-bottom {
@@ -20,6 +17,18 @@ html {
 }
 
 @layer base {
+
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+    /* Prevents pull-to-refresh but keeps scroll */
+  }
+
   body {
     @apply bg-paper-100 text-paper-900 font-sans antialiased;
   }

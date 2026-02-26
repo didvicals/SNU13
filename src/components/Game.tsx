@@ -28,7 +28,7 @@ const WaitingScreen = () => {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-xl shadow-card border border-paper-200 animate-fade-in">
+        <div className="flex flex-col items-center min-h-[60vh] text-center p-8 bg-white rounded-xl shadow-card border border-paper-200 animate-fade-in py-12">
             <div className="w-16 h-16 bg-accent-secondary text-white rounded-full flex items-center justify-center text-2xl font-bold mb-6 animate-bounce">
                 ⏳
             </div>
@@ -47,7 +47,7 @@ const WaitingScreen = () => {
 };
 
 export const Game: React.FC = () => {
-    const { gameState, isAdmin, calculateRound, nextRound, nextOne, myTeamName, resetGame } = useGame();
+    const { gameState, isAdmin, calculateRound, nextRound, myTeamName, resetGame } = useGame();
 
     // Loading State
     if (gameState.currentGame === 'tier' && !gameState.round) {

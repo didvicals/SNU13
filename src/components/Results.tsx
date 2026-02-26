@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { useGame } from '../context/GameContext';
-import { GAME_ROUNDS } from '../../server/gameState';
 import { TIERS } from '../types/game';
 import type { Tier, Item, RoundId, Ranking } from '../types/game';
 

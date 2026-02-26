@@ -4,8 +4,7 @@ import {
     DragOverlay,
     closestCenter,
     KeyboardSensor,
-    MouseSensor,
-    TouchSensor,
+    PointerSensor,
     useSensor,
     useSensors,
     useDroppable,
@@ -24,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useGame } from '../context/GameContext';
 import { TIERS } from '../types/game';
 import type { Tier, Item, Ranking } from '../types/game';
+import { GripVertical } from 'lucide-react';
 
 // Simple SortableItem - no handle, just direct drag
 const SortableItem = ({ item }: { item: Item }) => {
@@ -40,26 +40,33 @@ const SortableItem = ({ item }: { item: Item }) => {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        // TouchSensor with delay:250ms distinguishes scroll vs drag.
-        // Do NOT set touchAction:'none' here — that would block page scroll on mobile.
+        zIndex: isDragging ? 50 : undefined,
     };
 
     return (
         <div
             ref={setNodeRef}
             style={style}
-            {...attributes}
-            {...listeners}
-            className="relative group rounded-md cursor-grab active:cursor-grabbing text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md"
+            className="relative group rounded-md text-[10px] md:text-xs font-semibold flex flex-col items-center justify-center text-center h-20 w-20 md:h-24 md:w-24 m-1 select-none border bg-white overflow-hidden border-paper-200 text-paper-700 hover:border-paper-400 hover:shadow-md transition-shadow"
         >
+            {/* Drag Handle - ONLY this area initiates drag */}
+            <div
+                {...attributes}
+                {...listeners}
+                className="absolute top-1 right-1 p-1 cursor-grab active:cursor-grabbing text-paper-300 hover:text-accent-primary z-10"
+                style={{ touchAction: 'none' }}
+            >
+                <GripVertical size={14} />
+            </div>
+
             {item.image && (
                 <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-14 md:h-16 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
+                    className="w-full h-12 md:h-14 object-cover pointer-events-none mb-1 opacity-90 group-hover:opacity-100"
                 />
             )}
-            <span className="px-1 truncate w-full">{item.name}</span>
+            <span className="px-1 truncate w-full text-[9px] md:text-[11px] leading-tight mt-auto pb-1">{item.name}</span>
         </div>
     );
 };
@@ -151,20 +158,11 @@ export const TierListBoard = () => {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
-    // Per dnd-kit official docs: use MouseSensor + TouchSensor separately.
-    // PointerSensor + TouchSensor together causes conflicts on mobile.
-    const mouseSensor = useSensor(MouseSensor, {
-        // Require the mouse to move by 10 pixels before activating (official docs value)
+    // Use PointerSensor with drag handles.
+    // Since only the handle is touch-action: none, the rest of the item allows scrolling.
+    const pointerSensor = useSensor(PointerSensor, {
         activationConstraint: {
-            distance: 10,
-        },
-    });
-
-    const touchSensor = useSensor(TouchSensor, {
-        // Press delay of 250ms, with tolerance of 5px of movement (official docs value)
-        activationConstraint: {
-            delay: 250,
-            tolerance: 5,
+            distance: 5, // Immediate feedback on handle touch
         },
     });
 
@@ -172,7 +170,7 @@ export const TierListBoard = () => {
         coordinateGetter: sortableKeyboardCoordinates,
     });
 
-    const sensors = useSensors(mouseSensor, touchSensor, keyboardSensor);
+    const sensors = useSensors(pointerSensor, keyboardSensor);
 
     const collisionDetectionStrategy = useCallback((args: any) => {
         const currentItemsMap = itemsMapRef.current;
