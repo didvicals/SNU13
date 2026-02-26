@@ -15,7 +15,7 @@ export const Lobby: React.FC = () => {
     const isJoined = !!myTeamName;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 font-sans">
+        <div className="flex flex-col items-center min-h-screen py-12 px-4 font-sans">
             <img src="/assets/items/서울대학교.png" alt="Seoul National University Logo" className="w-24 h-24 mb-4 object-contain" />
             <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2 text-paper-900 tracking-tight text-center">미리배움터 레크리에이션</h1>
             <p className="text-paper-500 mb-8 text-lg font-medium">서울대학교 미리배움터 13조</p>
